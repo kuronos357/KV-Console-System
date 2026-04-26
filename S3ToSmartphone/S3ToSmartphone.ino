@@ -11,6 +11,80 @@ const char* password = "kv123456";
 WebServer server(80);
 WebSocketsServer webSocket(81);
 
+const char* html = R"(
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KV Monitor</title>
+    <style>
+        body {
+            background: #111;
+            color: #fff;
+            font-family: monospace;
+            font-size: 2em;
+            padding: 20px;
+        }
+        .value {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="value">バッテリー電圧: <span id="bv">--</span> V</div>
+    <div class="value">バッテリー電流: <span id="bc">--</span> A</div>
+    <div class="value">経過時間: <span id="time">--</span> s</div>
+    <div class="value">モーター電圧: <span id="mv">--</span> V</div>
+    <div class="value">モーター電流: <span id="mc">--</span> A</div>
+    <div class="value">速度: <span id="speed">--</span> km/h</div>
+    <div class="value">温度: <span id="temp">--</span> ℃</div>
+    <div class="value">消費電力量: <span id="wh">--</span> Wh</div>
+    <div class="value">消費電流量: <span id="ah">--</span> mAh</div>
+    <div class="value">推定バッテリー残量: <span id="soc">--</span> %</div>
+    <div class="value">走行距離: <span id="distance">--</span> km</div>
+
+
+    <script>
+        let Ah = 0;
+        let Wh = 0;
+        let time = 0;
+        let soc = 2000*40; // 仮のバッテリー容量（mAh）
+        let lastTime = Date.now();
+        let distance = 0;
+        const ws = new WebSocket("ws://192.168.4.1:81");
+
+        let currentLat = null;
+        let currentLng = null;
+
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const now = Date.now();
+            const elapsed = (now - lastTime) / 3600000; // 経過時間（時間）
+            lastTime = now;
+            document.getElementById("bv").textContent = data.bv;
+            document.getElementById("bc").textContent = data.bc;
+            document.getElementById("mv").textContent = data.mv;
+            document.getElementById("mc").textContent = data.mc;
+            document.getElementById("speed").textContent = data.speed;
+            document.getElementById("temp").textContent = data.temp;
+            Ah += data.bc * elapsed;
+            Wh += data.bv * data.bc * elapsed;
+            soc -= data.ah * elapsed * 1000; // mAhに変換して減算
+            distance += data.speed * elapsed; // km/h × h = km
+            time += elapsed * 3600; // 経過時間（秒）
+            document.getElementById("time").textContent = time.toFixed(2);
+            document.getElementById("ah").textContent = (Ah * 1000).toFixed(2); // mAhに変換
+            document.getElementById("wh").textContent = Wh.toFixed(2);
+            document.getElementById("distance").textContent = distance.toFixed(2);
+            document.getElementById("soc").textContent = (soc / (2000 * 40) * 100).toFixed(2); // SOCの計算
+        };
+    </script>
+</body>
+</html>
+)";
 void setup() {
     Serial.begin(115200);
     WiFi.softAP(ssid, password);
@@ -23,12 +97,15 @@ void setup() {
     M5.Display.setTextSize(2);     // 文字サイズ
     M5.Display.setCursor(0, 0);    // 表示位置
     M5.Display.print(WiFi.softAPIP());
-    
+    server.on("/", []() {
+        server.send(200, "text/html", html);
+    });
+    server.begin();
 }
 
 void loop() {
     webSocket.loop();
-
+    server.handleClient();
     static unsigned long lastSend = 0;
     if (millis() - lastSend >= 200) {
         lastSend = millis();

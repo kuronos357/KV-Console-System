@@ -29,7 +29,6 @@
     <div class="value">消費電流量: <span id="ah">--</span> mAh</div>
     <div class="value">推定バッテリー残量: <span id="soc">--</span> %</div>
     <div class="value">走行距離: <span id="distance">--</span> km</div>
-    <div class="value">座標: <span id="coordinates">--</span></div>
 
     <script>
         let Ah = 0;
@@ -43,10 +42,7 @@
         let currentLat = null;
         let currentLng = null;
 
-        navigator.geolocation.watchPosition((position) => {
-            currentLat = position.coords.latitude;
-            currentLng = position.coords.longitude;
-        });
+
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             const now = Date.now();
@@ -58,11 +54,10 @@
             document.getElementById("mc").textContent = data.mc;
             document.getElementById("speed").textContent = data.speed;
             document.getElementById("temp").textContent = data.temp;
-            document.getElementById("coordinates").textContent = `${currentLat}, ${currentLng}`;
             Ah += data.bc * elapsed;
             Wh += data.bv * data.bc * elapsed;
-            soc -= Ah*1000; // mAhに変換して減算
-            distance += data.speed * (elapsed * 3600) / 1000; // 距離（km）
+            soc -= data.ah * elapsed*1000; // mAhに変換して減算
+            distance += data.speed * elapsed; // km/h × h = km
             time += elapsed * 3600; // 経過時間（秒）
             document.getElementById("time").textContent = time.toFixed(2);
             document.getElementById("ah").textContent = (Ah * 1000).toFixed(2); // mAhに変換
