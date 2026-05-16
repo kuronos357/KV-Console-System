@@ -50,7 +50,7 @@ const char* html = R"(
         let Ah = 0;
         let Wh = 0;
         let time = 0;
-        let soc = 2000*40; // 仮のバッテリー容量（mAh）
+        let soc = 80000; // 仮のバッテリー容量（mAh）
         let lastTime = Date.now();
         let distance = 0;
         const ws = new WebSocket("ws://192.168.4.1:81");
@@ -72,14 +72,14 @@ const char* html = R"(
             document.getElementById("temp").textContent = data.temp;
             Ah += data.bc * elapsed;
             Wh += data.bv * data.bc * elapsed;
-            soc -= data.ah * elapsed * 1000; // mAhに変換して減算
+            soc -= soc = 80000 - (Ah * 1000); // 初期容量から累積Ahを引く
             distance += data.speed * elapsed; // km/h × h = km
             time += elapsed * 3600; // 経過時間（秒）
             document.getElementById("time").textContent = time.toFixed(2);
             document.getElementById("ah").textContent = (Ah * 1000).toFixed(2); // mAhに変換
             document.getElementById("wh").textContent = Wh.toFixed(2);
             document.getElementById("distance").textContent = distance.toFixed(2);
-            document.getElementById("soc").textContent = (soc / (2000 * 40) * 100).toFixed(2); // SOCの計算
+            document.getElementById("soc").textContent = (soc / 80000 * 100).toFixed(2); // SOCの計算
         };
     </script>
 </body>
