@@ -2,8 +2,21 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
         x:Class="KV_Pit.MainWindow"
-        Title="KV_Pit">
-    Welcome to Avalonia!
+        Title="KV Pit Monitor"
+        Background="#111111">
+    <StackPanel Margin="20" Spacing="10">
+        <TextBlock x:Name="BvText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="バッテリー電圧: -- V"/>
+        <TextBlock x:Name="BcText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="バッテリー電流: -- A"/>
+        <TextBlock x:Name="TimeText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="経過時間: -- s"/>
+        <TextBlock x:Name="MvText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="モーター電圧: -- V"/>
+        <TextBlock x:Name="McText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="モーター電流: -- A"/>
+        <TextBlock x:Name="SpeedText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="速度: -- km/h"/>
+        <TextBlock x:Name="TempText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="温度: -- ℃"/>
+        <TextBlock x:Name="WhText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="消費電力量: -- Wh"/>
+        <TextBlock x:Name="AhText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="消費電流量: -- mAh"/>
+        <TextBlock x:Name="SocText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="推定バッテリー残量: -- %"/>
+        <TextBlock x:Name="DistanceText" Foreground="White" FontFamily="Monospace" FontSize="24" Text="走行距離: -- km"/>
+    </StackPanel>
 </Window>
