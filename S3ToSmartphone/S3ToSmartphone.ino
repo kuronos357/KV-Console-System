@@ -1,18 +1,4 @@
-#include <WiFi.h>
-#include <WebSocketsServer.h>
-#include <ArduinoJson.h>
-#include <WebServer.h>
-#include <M5Unified.h>
-
-
-const char* ssid = "KV-System";
-const char* password = "kv123456";
-
-WebServer server(80);
-WebSocketsServer webSocket(81);
-
 const char* html = R"(
-<!DOCTYPE html>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -45,82 +31,73 @@ const char* html = R"(
     <div class="value">推定バッテリー残量: <span id="soc">--</span> %</div>
     <div class="value">走行距離: <span id="distance">--</span> km</div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+        import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJeTUbBTJcwY8UGZBMa3PFgFDunLtAH50",
+            authDomain: "ultimate-balm-474810-v7.firebaseapp.com",
+            projectId: "ultimate-balm-474810-v7",
+            storageBucket: "ultimate-balm-474810-v7.firebasestorage.app",
+            messagingSenderId: "671599545393",
+            appId: "1:671599545393:web:b5d83f8f71ed6572a9d910"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         let Ah = 0;
         let Wh = 0;
         let time = 0;
-        let soc = 80000; // 仮のバッテリー容量（mAh）
+        let totalAh = 0;
+        const batteryCapacity = 80000;
         let lastTime = Date.now();
         let distance = 0;
-        const ws = new WebSocket("ws://192.168.4.1:81");
+        //const ws = new WebSocket("ws://192.168.4.1:81");
+        const ws = new WebSocket("ws://localhost:81");
 
-        let currentLat = null;
-        let currentLng = null;
-
-
-        ws.onmessage = (event) => {
+        ws.onmessage = async (event) => {
             const data = JSON.parse(event.data);
             const now = Date.now();
-            const elapsed = (now - lastTime) / 3600000; // 経過時間（時間）
+            const elapsed = (now - lastTime) / 3600000;
             lastTime = now;
+
+            Ah += data.bc * elapsed;
+            Wh += data.bv * data.bc * elapsed;
+            totalAh = Ah * 1000;
+            const soc = (batteryCapacity - totalAh) / batteryCapacity * 100;
+            distance += data.speed * elapsed;
+            time += elapsed * 3600;
+
             document.getElementById("bv").textContent = data.bv;
             document.getElementById("bc").textContent = data.bc;
             document.getElementById("mv").textContent = data.mv;
             document.getElementById("mc").textContent = data.mc;
             document.getElementById("speed").textContent = data.speed;
             document.getElementById("temp").textContent = data.temp;
-            Ah += data.bc * elapsed;
-            Wh += data.bv * data.bc * elapsed;
-            soc -= soc = 80000 - (Ah * 1000); // 初期容量から累積Ahを引く
-            distance += data.speed * elapsed; // km/h × h = km
-            time += elapsed * 3600; // 経過時間（秒）
             document.getElementById("time").textContent = time.toFixed(2);
-            document.getElementById("ah").textContent = (Ah * 1000).toFixed(2); // mAhに変換
+            document.getElementById("ah").textContent = totalAh.toFixed(2);
             document.getElementById("wh").textContent = Wh.toFixed(2);
             document.getElementById("distance").textContent = distance.toFixed(2);
-            document.getElementById("soc").textContent = (soc / 80000 * 100).toFixed(2); // SOCの計算
+            document.getElementById("soc").textContent = soc.toFixed(2);
+
+            await addDoc(collection(db, "telemetry"), {
+                timestamp: now,
+                bv: data.bv,
+                bc: data.bc,
+                mv: data.mv,
+                mc: data.mc,
+                speed: data.speed,
+                temp: data.temp,
+                ah: totalAh,
+                wh: Wh,
+                soc: soc,
+                distance: distance,
+                time: time
+            });
         };
     </script>
 </body>
 </html>
 )";
-void setup() {
-    Serial.begin(115200);
-    WiFi.softAP(ssid, password);
-    
-    webSocket.begin();
-    Serial.println(WiFi.softAPIP());
-    auto cfg = M5.config();
-    M5.begin(cfg);
-
-    M5.Display.setTextSize(2);     // 文字サイズ
-    M5.Display.setCursor(0, 0);    // 表示位置
-    M5.Display.print(WiFi.softAPIP());
-    server.on("/", []() {
-        server.send(200, "text/html", html);
-    });
-    server.begin();
-}
-
-void loop() {
-    webSocket.loop();
-    server.handleClient();
-    static unsigned long lastSend = 0;
-    if (millis() - lastSend >= 200) {
-        lastSend = millis();
-
-        JsonDocument doc;
-        doc["bv"] = random(230, 250) / 10.0;
-        doc["bc"] = random(30, 50) / 10.0;
-        doc["mv"] = random(220, 240) / 10.0;
-        doc["mc"] = random(150, 170) / 10.0;
-        doc["speed"] = random(200, 300) / 10.0;
-        doc["temp"] = random(300, 500) / 10.0;
-
-        String json;
-        serializeJson(doc, json);
-        webSocket.broadcastTXT(json);
-        Serial.println(json);
-    }
-}
