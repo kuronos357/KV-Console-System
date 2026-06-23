@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KV-Pit")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+74f1a5fa9c76f63a5f17003598736acb2677c9cb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a5c3219f4f5e286aa18800ac16e8be6baafdc9c8")]
 [assembly: System.Reflection.AssemblyProductAttribute("KV-Pit")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KV-Pit")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

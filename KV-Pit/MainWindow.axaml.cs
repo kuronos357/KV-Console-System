@@ -6,7 +6,7 @@ namespace KV_Pit;
 
 public partial class MainWindow : Window
 {
-    private FirestoreDb db;
+    private FirestoreDb? db;
 
     public MainWindow()
     {
